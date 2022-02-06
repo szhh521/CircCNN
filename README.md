@@ -42,4 +42,3 @@ Model parameter description
 
 # Acknowledgments
 J Wang, L Wang. Deep learning of the back-splicing code for circular RNA formation, Bioinformatics 2019;35:5235-5242.
-@szhh521
