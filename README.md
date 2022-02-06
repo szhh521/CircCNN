@@ -1,12 +1,6 @@
 # CircCNN
 Python code for Predicting the Back-Splicing Sites for Circular RNA Formation by Cross-Validation and Convolutional Neural Networks
 
-# Code Describe
-
-In this study, we propose CircCNN using convolution neural network and batch normalization for predicting pre-mRNA back-splicing sites. Experimental results on three datasets show that CircCNN outperforms other baseline models. Moreover, PWM features extract by CircCNN are converted as motifs. Further analysis reveals that some of motifs found by CircCNN match known motifs involved in gene expression regulation, the distribution of motif and special short sequence is important for pre-mRNA back-splicing. In general, the findings in this study provide a new direction for exploring pre-mRNA back-splicing for CircRNA formation.
-
-For details of this work, users can refer to our paper "Predicting the Back-Splicing Sites for Circular RNA Formation by Cross-Validation and Convolutional Neural Networks" (Zhen Shen, Lin Yuan, et al. 2022).
-
 # Software Requests
 Python 3.6
 
