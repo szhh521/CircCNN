@@ -26,14 +26,14 @@ def data(file_path):
     test_data = file_path + '/all_test'
     test_label = file_path + '/test_label'
     data_train = []
-
+    #train data encoding
     for line in open(train_data):
         line = line[:-1].strip()
         temp = []
         temp.extend(np.array(key_seq.get(k)).astype(np.float) for k in line)
         data_train.append(temp)
     label_train = [int(k[:-1]) for k in open(train_label)]
-
+    #test data encoding
     for line in open(test_data):
         line = line[:-1].strip()
         temp = []
@@ -47,9 +47,9 @@ def data(file_path):
 
 def main_model():
     print('Building model...')
-    ip1 = Input(shape=[100,4])
-    ip2 = Input(shape=[100,4])
-    #up
+    ip1 = Input(shape=[100,4])#SA input
+    ip2 = Input(shape=[100,4])#SD input
+    #SA input data feature learning
     conv1 = Convolution1D(filters=256, kernel_size=12, strides=1,activation='relu',padding='valid',name='conv1')(ip1)
     d1 = Dropout(0)(conv1)
     conv2 = Convolution1D(filters=128, kernel_size=30, strides=2,activation='relu',padding='same',name='conv2')(d1)
@@ -57,7 +57,7 @@ def main_model():
     mp1 = MaxPooling1D(5,5)(dro1)
     d2 = Dropout(0.7)(mp1)
     l_fla1=Flatten()(d2)
-    #down
+    #SD input data feature learning
     conv3 = Convolution1D(filters=256, kernel_size=12, strides=1,activation='relu',padding='valid',name='conv3')(ip2)
     d3 = Dropout(0)(conv3)
     conv4 = Convolution1D(filters=128, kernel_size=30, strides=2,activation='relu',padding='same',name='conv4')(d3)
@@ -68,7 +68,7 @@ def main_model():
     convs = []
     convs.append(l_fla1)
     convs.append(l_fla2)
-    l_concat = Concatenate(axis=1,name='cvout')(convs)
+    l_concat = Concatenate(axis=1,name='cvout')(convs)#
     bn1 = BatchNormalization()(l_concat)
     l_sigmoid = Dense(1, activation='sigmoid')(bn1)
     model = Model(inputs=[ip1,ip2],outputs=l_sigmoid)
@@ -82,7 +82,7 @@ def model_eval(file_path,history_callback,model,model_path,test_1,test_2,label_t
     y_predn = model.predict([test_1,test_2], batch_size=batchsize, verbose=1)
     y_new = label_test
 
-    print ('Calculating AUC...')
+    print ('Calculating metrics...')
     t_auc = metrics.roc_auc_score(y_new, y_predn)
     t_acc = metrics.accuracy_score(y_new, [1 if x > 0.5 else 0 for x in y_predn])
     #t_prc = metrics.average_precision_score(y_new, y_predn)
@@ -98,6 +98,7 @@ def model_eval(file_path,history_callback,model,model_path,test_1,test_2,label_t
     #print (t_auc, t_prc,t_acc, t_f1, t_mcc,  pre, recall)
 
     print('save results to local file')
+	#save training history data
     myhist = history_callback.history
     all_hist = np.asarray([myhist["loss"], myhist["acc"], myhist["val_loss"], myhist["val_acc"]]).transpose()
     hisname = 'training_history_' + str(index) + '_' + str(cvind) + '.txt'
@@ -129,9 +130,10 @@ def model_cross_valid(fpath,optim,batchs,index,cv_fold_num):
     file_path = fpath
     data_train, label_train = data(file_path)
     cvind = 0
+	#use StratifiedKFold to implement 7fold cross validation
     kfold = StratifiedKFold(n_splits=cv_fold_num,shuffle=True,random_state=seed)
-    all_result = []
-    all_metrics = []
+    all_result = [] # save predict data label
+    all_metrics = [] # save model metrics
     for train,test in kfold.split(data_train,label_train):
         cv_train = data_train[train]
         cv_train_label = label_train[train]
@@ -152,7 +154,7 @@ def model_cross_valid(fpath,optim,batchs,index,cv_fold_num):
         test_1 = np.array(test_1)
         test_2 = np.array(test_2)
 
-        model = main_model()
+		model = main_model()
         model.compile(loss='binary_crossentropy', optimizer=optim, metrics=['accuracy'])
         print(model.summary())
         model_path = file_path + '/circrna_best_' + str(index) + '_' + str(cvind) + '.hdf5'
@@ -178,6 +180,7 @@ def model_cross_valid(fpath,optim,batchs,index,cv_fold_num):
         #'\t'.join([auc, prc, acc, f1, mcc, precision, recall])
         #all_metrics.append('\t'.join([str(auc), str(prc), str(acc), str(f1), str(mcc), str(precision), str(recall), str(sens),str(spec)]))
         all_metrics.append([auc, prc, acc, f1, mcc, precision, recall, sens, spec])
+		#save train data,train label, test data,test label for different fold
         if os.path.exists(file_path + '/train_data_' + str(index) + '_' + str(cvind)):
             os.remove(file_path + '/train_data_' + str(index) + '_' + str(cvind))
         if os.path.exists(file_path + '/train_label_' + str(index) + '_' + str(cvind)):
@@ -223,6 +226,7 @@ def model_cross_valid(fpath,optim,batchs,index,cv_fold_num):
         cur_train_label_out.close()
         cur_test_data_out.close()
         cur_test_label_out.close()
+		#save predict results
         if os.path.exists(file_path + '/pred_label_' + str(index) + '_' + str(cvind)):
             os.remove(file_path + '/pred_label_' + str(index) + '_' + str(cvind))
         pred_out = open(file_path + '/pred_label_' + str(index) + '_' + str(cvind),'w')
@@ -236,11 +240,11 @@ def model_cross_valid(fpath,optim,batchs,index,cv_fold_num):
         print(ll)
     return all_metrics
 
-datapath = sys.argv[1]
-resultpath = sys.argv[2]
-batch_size = sys.argv[3]
-cv_fold_num = sys.argv[4]
-model_run_num = sys.argv[5]
+datapath = sys.argv[1] # input data path
+resultpath = sys.argv[2] # output path
+batch_size = sys.argv[3] # model batch size
+cv_fold_num = sys.argv[4] # n-fold cross validation we need
+model_run_num = sys.argv[5] # model repeat times
 
 all_out = []
 for ind in range(model_run_num):
