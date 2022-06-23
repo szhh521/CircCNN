@@ -119,15 +119,24 @@ def encod_data(data):
     data_out = np.array(data_out)
     return ind1,ind2,data_out
 
-fpath = sys.argv[1]
-dpath = sys.argv[2]
-cv_fold_number = sys.argv[3]
+fpath = sys.argv[1] #input data path: saved model, input data
+dpath = sys.argv[2] #result save path: motif-related data, motif logo, pwm file, and so on
+cv_fold_number = sys.argv[3] # same with model training
 
 specie = ['human','mouse','fly']
 dtype = ['pos','neg']
 input = ['input1','input2']
 
+################################################################################
+# (1) according to the species type we selected, load test data, test label and trained model
+# (2) confirm output path
+# (3) encoding test data
+# (4) loading model, run it with input test data
+# (5) get motif info by get_motif_fig_new function
+################################################################################
+
 index = 0
+# according to the species type we selected, load test data, test label and trained model
 for mind in range(cv_fold_number):
     for l1 in specie:
         print('Now in:', l1)
@@ -148,6 +157,7 @@ for mind in range(cv_fold_number):
             memefile = 'Ray2013_rbp_Drosophila_melanogaster.meme'
         for l2 in dtype:
             for l3 in input:
+				# confirm output path
                 out_dir = dpath + '/' + l1 + '/model' + str(mind) + '/' + l2 + '/' + l3 + '/motif_cnn'
                 if os.path.exists(dpath + '/' + l1 + '/model' + str(mind) + '/' + l2 + '/' + l3):
                     shutil.rmtree(dpath + '/' + l1 + '/model' + str(mind) + '/' + l2 + '/' + l3)
@@ -158,6 +168,7 @@ for mind in range(cv_fold_number):
                         pos_data.append(l4[:-1])
                     elif l5[0] == '0':
                         neg_data.append(l4[:-1])
+				# encoding test data
                 print('Encoding data')
                 if l2 == 'pos':
                     ind1, ind2, encode_data = encod_data(pos_data)
@@ -172,6 +183,7 @@ for mind in range(cv_fold_number):
                 test_2 = np.array(test_2)
                 print('Loading model')
                 print(model_path)
+				# loading model, run it with input test data
                 model = load_model(model_path)
                 if l3 == 'input1':
                     input_seq = ind1
@@ -197,10 +209,10 @@ for mind in range(cv_fold_number):
                     filter_weights.append(x)
                 filter_weights = np.array(filter_weights)
                 sample_i = 0
+				# get motif info by get_motif_fig_new function
                 if os.path.exists(out_dir):
                     os.remove(out_dir)
                 os.makedirs(out_dir)
                 if index == 0:
                     get_motif_fig_new(filter_weights, conv_out, out_dir, input_seq, sample_i,memefile)
-                print('good')
-
+                print('done')
